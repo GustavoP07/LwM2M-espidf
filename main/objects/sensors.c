@@ -29,6 +29,8 @@
 #include "objects/objects.h"
 #include "sdkconfig.h"
 
+#include"ds18b20.h"
+
 #define TEMPERATURE_OBJ_OID 3303
 
 typedef struct {
@@ -40,11 +42,13 @@ typedef struct {
     void (*get_data)(double *sensor_data);
 } basic_sensor_context_t;
 
-static double temperature_sensor_data;
+static float temperature_sensor_data;
 int temperature_read_data(void) {
     uint8_t temp[2];
     if (1) {
-        temperature_sensor_data = 22;
+        ds18b20_requestTemperatures();
+        temperature_sensor_data = ds18b20_get_temp();
+        printf("Valor actualizado en servidor= %0.2f°C\n", temperature_sensor_data);
         return 0;
     } else {
         return -1;
@@ -101,7 +105,7 @@ void sensors_install(anjay_t *anjay) {
     for (int i = 0; i < (int) AVS_ARRAY_SIZE(BASIC_SENSORS_DEF); i++) {
         basic_sensor_context_t *ctx = &BASIC_SENSORS_DEF[i];
 
-        if (anjay_ipso_basic_sensor_install(anjay, ctx->oid, 1)) {
+        if (anjay_ipso_basic_sensor_install(anjay, ctx->oid, 2)) {
             avs_log(ipso_object,
                     WARNING,
                     "Object: %s could not be installed",
@@ -113,6 +117,23 @@ void sensors_install(anjay_t *anjay) {
                     anjay,
                     ctx->oid,
                     0,
+                    (anjay_ipso_basic_sensor_impl_t) {
+                        .unit = ctx->unit,
+                        .user_context = ctx,
+                        .min_range_value = NAN,
+                        .max_range_value = NAN,
+                        .get_value = basic_sensor_get_value
+                    })) {
+            avs_log(ipso_object,
+                    WARNING,
+                    "Instance of %s object could not be added",
+                    ctx->name);
+        }
+
+        if (anjay_ipso_basic_sensor_instance_add(
+                    anjay,
+                    ctx->oid,
+                    1,
                     (anjay_ipso_basic_sensor_impl_t) {
                         .unit = ctx->unit,
                         .user_context = ctx,

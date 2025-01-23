@@ -6,7 +6,8 @@ set(sources
      "objects/light_control.c"
      "objects/push_button.c"
      "objects/sensors.c"
-     "firmware_update.c")
+     "firmware_update.c"
+     "ds18b20.c")
 
 set(dirs
      ".")

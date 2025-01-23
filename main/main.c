@@ -47,8 +47,10 @@
 
 #include "esp_ot_cli_extension.h"
 
-#define CONFIG_ESP_WIFI_SSID      "SEBAS_LAN_AP"
-#define CONFIG_ESP_WIFI_PASSWORD      "1053866507"
+#include "ds18b20.h"
+
+#define CONFIG_ESP_WIFI_SSID      "GustavoPisso"
+#define CONFIG_ESP_WIFI_PASSWORD      "12345678"
 #define CONFIG_ESP_MAXIMUM_RETRY  5
 
 static EventGroupHandle_t event_group; // Manejador del grupo de eventos
@@ -57,6 +59,8 @@ static EventGroupHandle_t event_group; // Manejador del grupo de eventos
 static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
+
+QueueHandle_t Temperature_Queue;
 
 static int s_retry_num = 0;
 
@@ -293,22 +297,54 @@ static void ot_task_worker(void *aContext)
     vTaskDelete(NULL);
 }
 
+static void temperature_task(){
+
+    gpio_reset_pin(23);
+    gpio_set_direction(23, GPIO_MODE_OUTPUT);
+
+    while (1)
+    {
+        ds18b20_requestTemperatures();
+
+        float temperature = ds18b20_get_temp();
+
+        if (xQueuePeek(Temperature_Queue, &temperature, portMAX_DELAY) == pdPASS) {
+            printf("Dato de temperatura enviado= %0.2f°C\n", temperature);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
+
 void app_main(void)
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(nvs_flash_init());  //Inicialización para escribir en la NVS (Non-Volatile Storage)
+    ESP_ERROR_CHECK(esp_netif_init());  //Inicialización de infraestructura de red para ethernet o WiFi (Wifi para nuestro caso)
+    ESP_ERROR_CHECK(esp_event_loop_create_default());   /*Inicializa sistema de eventos para monitorear los procesos
+                                                        * Hay que configurar lo que se quieran mostrar
+                                                        * Los de WiFi y ethernet ya están listos dentro de las librerias de ESP                                                        
+                                                        */
+                                                        
 
-    //register_wifi();
+    // register_wifi();
 
-    xTaskCreate(ot_task_worker, "ot_cli_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
+    xTaskCreate(ot_task_worker, "ot_cli_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL); //Tarea principal en donde se ejecuta thread
 
-    avs_log_set_handler(log_handler);
-    avs_log_set_default_level(AVS_LOG_TRACE);
-
-    anjay_init();
-    xTaskCreate(&anjay_task, "anjay_task", 16384, NULL, 5, NULL);
+    //Configurar LOGS personalizados para el reporte de errores
+    avs_log_set_handler(log_handler); //Se configura manejador de log
+    avs_log_set_default_level(AVS_LOG_TRACE);  /*Se escoge el manejador de acuerdo a la severidad
+                                               * AVS_LOG_TRACE es de los más detallados
+                                               */
+                                        
+    anjay_init(); //Inicialización de protocolo LwM2M
+    xTaskCreate(&anjay_task, "anjay_task", 16384, NULL, 5, NULL);   //Creación de tarea para protocolo LwM2M
     
+    //inicialización del sensor
+	ds18b20_init(23);
+    Temperature_Queue = xQueueCreate(1, sizeof(float));
+    xTaskCreate(temperature_task, "temperatue_task", 2048, NULL, 2, NULL);
+
+
 
     //esp_sleep_enable_timer_wakeup(TIMER_WAKEUP_TIME_US);
     //xTaskCreate(trigger_event_task, "Trigger Event Task", 2048, NULL, 5, NULL);
