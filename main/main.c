@@ -48,19 +48,15 @@
 #include "esp_ot_cli_extension.h"
 
 #include "ds18b20.h"
-
-#define CONFIG_ESP_WIFI_SSID      "GustavoPisso"
-#define CONFIG_ESP_WIFI_PASSWORD      "12345678"
-#define CONFIG_ESP_MAXIMUM_RETRY  5
+#include "main.h"
 
 static EventGroupHandle_t event_group; // Manejador del grupo de eventos
 #define EVENT_SLEEP_MODE_ON (1 << 0) // Define un bit específico para el evento
 
 static EventGroupHandle_t s_wifi_event_group;
+
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
-
-QueueHandle_t Temperature_Queue;
 
 static int s_retry_num = 0;
 
@@ -299,18 +295,30 @@ static void ot_task_worker(void *aContext)
 
 static void temperature_task(){
 
-    gpio_reset_pin(23);
-    gpio_set_direction(23, GPIO_MODE_OUTPUT);
+    gpio_reset_pin(GPIO_SENSOR_1);
+    gpio_reset_pin(GPI0_SENSOR_2);
+    gpio_reset_pin(GPI0_SENSOR_3);
+    gpio_set_direction(GPIO_SENSOR_1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GPI0_SENSOR_2, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GPI0_SENSOR_3, GPIO_MODE_OUTPUT);
+    float temperature;
 
     while (1)
-    {
+    {   
+        ds18b20_selec_gpio(GPIO_SENSOR_1);
         ds18b20_requestTemperatures();
+        temperature = ds18b20_get_temp();
+        printf("\nDato de temperatura sensor 1 leido= %0.2f°C\n", temperature);
 
-        float temperature = ds18b20_get_temp();
+        ds18b20_selec_gpio(GPI0_SENSOR_2);
+        ds18b20_requestTemperatures();
+        temperature = ds18b20_get_temp();
+        printf("Dato de temperatura sensor 2 leido= %0.2f°C\n", temperature);
 
-        if (xQueuePeek(Temperature_Queue, &temperature, portMAX_DELAY) == pdPASS) {
-            printf("Dato de temperatura enviado= %0.2f°C\n", temperature);
-        }
+        ds18b20_selec_gpio(GPI0_SENSOR_3);
+        ds18b20_requestTemperatures();
+        temperature = ds18b20_get_temp();
+        printf("Dato de temperatura sensor 3 leido= %0.2f°C\n", temperature);
 
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
@@ -340,11 +348,10 @@ void app_main(void)
     xTaskCreate(&anjay_task, "anjay_task", 16384, NULL, 5, NULL);   //Creación de tarea para protocolo LwM2M
     
     //inicialización del sensor
-	ds18b20_init(23);
-    Temperature_Queue = xQueueCreate(1, sizeof(float));
+	ds18b20_init(GPIO_SENSOR_1);
+    ds18b20_init(GPI0_SENSOR_2);
+    ds18b20_init(GPI0_SENSOR_3);
     xTaskCreate(temperature_task, "temperatue_task", 2048, NULL, 2, NULL);
-
-
 
     //esp_sleep_enable_timer_wakeup(TIMER_WAKEUP_TIME_US);
     //xTaskCreate(trigger_event_task, "Trigger Event Task", 2048, NULL, 5, NULL);

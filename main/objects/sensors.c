@@ -29,7 +29,8 @@
 #include "objects/objects.h"
 #include "sdkconfig.h"
 
-#include"ds18b20.h"
+#include "ds18b20.h"
+#include "main.h"
 
 #define TEMPERATURE_OBJ_OID 3303
 
@@ -46,9 +47,10 @@ static float temperature_sensor_data;
 int temperature_read_data(void) {
     uint8_t temp[2];
     if (1) {
+        ds18b20_selec_gpio(GPI0_SENSOR_3);
         ds18b20_requestTemperatures();
         temperature_sensor_data = ds18b20_get_temp();
-        printf("Valor actualizado en servidor= %0.2f°C\n", temperature_sensor_data);
+        // printf("Valor actualizado en servidor= %0.2f°C\n", temperature_sensor_data);
         return 0;
     } else {
         return -1;

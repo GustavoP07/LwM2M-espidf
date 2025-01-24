@@ -324,6 +324,10 @@ float ds18b20_get_temp(void) {
   else{return 0;}
 }
 
+void ds18b20_selec_gpio(int GPIO){
+	DS_GPIO = GPIO;
+}
+
 void ds18b20_init(int GPIO) {
 	DS_GPIO = GPIO;
 	// gpio_pad_select_gpio(DS_GPIO);

@@ -46,6 +46,7 @@ static const uint8_t dscrc2x16_table[] = {
 /* *INDENT-ON* */
 
 void ds18b20_init(int GPIO);
+void ds18b20_selec_gpio(int GPIO);
 
 #define ds18b20_send ds18b20_write
 #define ds18b20_send_byte ds18b20_write_byte
