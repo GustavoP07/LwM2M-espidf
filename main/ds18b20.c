@@ -319,7 +319,6 @@ float ds18b20_get_temp(void) {
         return temp;
       }
       else{return 0;}
-
   }
   else{return 0;}
 }

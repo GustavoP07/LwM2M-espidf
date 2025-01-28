@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}

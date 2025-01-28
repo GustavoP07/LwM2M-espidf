@@ -1,15 +1,32 @@
 #include "anjay_config.h"
 #include <openthread/thread.h>
 #include "esp_openthread.h"
+#include "esp_mac.h"
+#include <stdio.h>
 
 static int read_anjay_config(void) {
     int err = 0;
 
+        uint8_t mac[6];               // Array para almacenar la dirección MAC
+        char mac_str[18];             // String para almacenar la MAC formateada (17 caracteres)
+        // Leer la dirección MAC
+        if (esp_read_mac(mac, ESP_MAC_EFUSE_FACTORY) == ESP_OK) {
+            // Convertir la MAC a string con formato "XX:XX:XX:XX:XX:XX"
+            snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X",
+                        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+            printf("MAC Address as string: %s\n", mac_str);
+        } else {
+            printf("Failed to read MAC address.\n");
+        }
+
         avs_log(tutorial, WARNING,"Reading from NVS has failed, attempt with Kconfig");
-        snprintf(ENDPOINT_NAME, sizeof(ENDPOINT_NAME), "%s",CONFIG_ANJAY_CLIENT_ENDPOINT_NAME);
+        // snprintf(ENDPOINT_NAME, sizeof(ENDPOINT_NAME), "%s",CONFIG_ANJAY_CLIENT_ENDPOINT_NAME);
+        snprintf(ENDPOINT_NAME, sizeof(ENDPOINT_NAME), "%s",mac_str);
         snprintf(SERVER_URI, sizeof(SERVER_URI), "%s",CONFIG_ANJAY_CLIENT_SERVER_URI);
         snprintf(PSK, sizeof(PSK), "%s", CONFIG_ANJAY_CLIENT_PSK_KEY);
-        snprintf(IDENTITY, sizeof(IDENTITY), "%s",CONFIG_ANJAY_CLIENT_PSK_IDENTITY);
+        // snprintf(IDENTITY, sizeof(IDENTITY), "%s",CONFIG_ANJAY_CLIENT_PSK_IDENTITY);
+        snprintf(IDENTITY, sizeof(IDENTITY), "%s",mac_str);
         err = -1;
     return err;
 }
@@ -97,9 +114,9 @@ static int setup_server_object(anjay_t *anjay) {
 void anjay_init(void) {
     const anjay_configuration_t CONFIG = {
         .endpoint_name = ENDPOINT_NAME,
-        .in_buffer_size = 4000,
-        .out_buffer_size = 4000,
-        .msg_cache_size = 4000
+        .in_buffer_size = 8000,
+        .out_buffer_size = 8000,
+        .msg_cache_size = 8000
     };
 
     // Read necessary data for object install

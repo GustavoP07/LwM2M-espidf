@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/CMakeFiles/bootloader-complete.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/gpisso/Trabajo_de_grado/Repositorio_Grupo/LwM2M-espidf/Read_MAC/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

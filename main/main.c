@@ -47,8 +47,21 @@
 
 #include "esp_ot_cli_extension.h"
 
+#include "dht.h"
 #include "ds18b20.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "driver/gpio.h"
+#include "esp_log.h"
 #include "main.h"
+
+// Manejadores para las colas de los sensores
+QueueHandle_t temperature_sensor_1_queue;
+QueueHandle_t temperature_sensor_2_queue;
+QueueHandle_t temperature_sensor_3_queue;
+QueueHandle_t humidity_sensor_DHT11_queue;
+QueueHandle_t humidity_sensor_DHT22_queue;
 
 static EventGroupHandle_t event_group; // Manejador del grupo de eventos
 #define EVENT_SLEEP_MODE_ON (1 << 0) // Define un bit específico para el evento
@@ -293,7 +306,7 @@ static void ot_task_worker(void *aContext)
     vTaskDelete(NULL);
 }
 
-static void temperature_task(){
+static void temperature_task(void *pvParameter){
 
     gpio_reset_pin(GPIO_SENSOR_1);
     gpio_reset_pin(GPI0_SENSOR_2);
@@ -308,31 +321,92 @@ static void temperature_task(){
         ds18b20_selec_gpio(GPIO_SENSOR_1);
         ds18b20_requestTemperatures();
         temperature = ds18b20_get_temp();
-        printf("\nDato de temperatura sensor 1 leido= %0.2f°C\n", temperature);
-
+        if(xQueueOverwrite(temperature_sensor_1_queue, &temperature) == pdFALSE){
+                ESP_LOGE("QUEUE","Error al guardar dato de temperatura sensor 1");
+            }else{
+            ESP_LOGI("QUEUE","Dato de temperatura sensor 1 guardado en cola correctamente= %0.2f°C", temperature);
+            }
+        
         ds18b20_selec_gpio(GPI0_SENSOR_2);
         ds18b20_requestTemperatures();
         temperature = ds18b20_get_temp();
-        printf("Dato de temperatura sensor 2 leido= %0.2f°C\n", temperature);
+        if(xQueueOverwrite(temperature_sensor_2_queue, &temperature) == pdFALSE){
+                ESP_LOGE("QUEUE","Error al guardar dato de temperatura sensor 2");
+            }else{
+            ESP_LOGI("QUEUE","Dato de temperatura sensor 2 guardado en cola correctamente= %0.2f°C", temperature);
+            }
 
         ds18b20_selec_gpio(GPI0_SENSOR_3);
         ds18b20_requestTemperatures();
         temperature = ds18b20_get_temp();
-        printf("Dato de temperatura sensor 3 leido= %0.2f°C\n", temperature);
+        if(xQueueOverwrite(temperature_sensor_3_queue, &temperature) == pdFALSE){
+                ESP_LOGE("QUEUE","Error al guardar dato de temperatura sensor 3");
+            }else{
+            ESP_LOGI("QUEUE","Dato de temperatura sensor 3 guardado en cola correctamente= %0.2f°C", temperature);
+            }
 
-        vTaskDelay(pdMS_TO_TICKS(2000));
+        vTaskDelay(pdMS_TO_TICKS(5000));        
+        
+    }
+}
+
+static void humidity_task(void *pvParameter){
+
+    float humidity, temperature;
+
+    while(1){
+        dht_read_float_data(DHT_TYPE_DHT11, GPIO_NUM_2, &humidity, &temperature);
+        if(xQueueOverwrite(humidity_sensor_DHT11_queue, &humidity) == pdFALSE){
+                ESP_LOGE("QUEUE","\nError al guardar dato de temperatura sensor DHT11");
+            }else{
+            ESP_LOGI("QUEUE","Dato de humedad sensor DHT11 guardado en cola correctamente= %0.2f %% , Temp= %0.2f °C", humidity, temperature);
+            }        
+
+        dht_read_float_data(DHT_TYPE_AM2301, GPIO_NUM_3, &humidity, &temperature);
+        if(xQueueOverwrite(humidity_sensor_DHT22_queue, &humidity) == pdFALSE){
+                ESP_LOGE("QUEUE","Error al guardar dato de temperatura sensor DHT22\n");
+            }else{
+            ESP_LOGI("QUEUE","Dato de humedad sensor DHT22 guardado en cola correctamente= %0.2f %% , Temp= %0.2f °C", humidity, temperature);
+            }
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
 
 void app_main(void)
 {
+    
+    // Creando colas para sensores
+    temperature_sensor_1_queue = xQueueCreate(1, sizeof(float));
+    if(temperature_sensor_1_queue == NULL){ESP_LOGE("QUEUE", "Error al crear cola sensor 1");}else{ ESP_LOGI("QUEUE", "Cola sensor 1 creada con éxito");}
+    
+    temperature_sensor_2_queue = xQueueCreate(1, sizeof(float));
+    if(temperature_sensor_2_queue == NULL){ESP_LOGE("QUEUE", "Error al crear cola sensor 2");}else{ESP_LOGI("QUEUE", "Cola sensor 2 creada con éxito");}
+
+    temperature_sensor_3_queue = xQueueCreate(1, sizeof(float));
+    if(temperature_sensor_3_queue == NULL){ESP_LOGE("QUEUE", "Error al crear cola sensor 3");}else{ESP_LOGI("QUEUE", "Cola sensor 3 creada con éxito");}
+
+    humidity_sensor_DHT11_queue = xQueueCreate(1, sizeof(float));
+    if(humidity_sensor_DHT11_queue == NULL){ESP_LOGE("QUEUE", "Error al crear cola sensor DHT11");}else{ESP_LOGI("QUEUE", "Cola sensor DHT11 creada con éxito");}
+    
+    humidity_sensor_DHT22_queue = xQueueCreate(1, sizeof(float));
+    if(humidity_sensor_DHT22_queue == NULL){ESP_LOGE("QUEUE", "Error al crear cola sensor DHT22");}else{ESP_LOGI("QUEUE", "Cola sensor DHT22 creada con éxito");}
+
+    //inicialización del sensor de temperatura
+	ds18b20_init(GPIO_SENSOR_1);
+    ds18b20_init(GPI0_SENSOR_2);
+    ds18b20_init(GPI0_SENSOR_3);
+    xTaskCreate(temperature_task, "temperatue_task", 2048, NULL, 2, NULL);
+
+    // Inicialización de sernsor de humedad
+    xTaskCreate(humidity_task, "humidity_task", 2048, NULL, 2, NULL);
+
+
     ESP_ERROR_CHECK(nvs_flash_init());  //Inicialización para escribir en la NVS (Non-Volatile Storage)
     ESP_ERROR_CHECK(esp_netif_init());  //Inicialización de infraestructura de red para ethernet o WiFi (Wifi para nuestro caso)
     ESP_ERROR_CHECK(esp_event_loop_create_default());   /*Inicializa sistema de eventos para monitorear los procesos
                                                         * Hay que configurar lo que se quieran mostrar
                                                         * Los de WiFi y ethernet ya están listos dentro de las librerias de ESP                                                        
-                                                        */
-                                                        
+                                                        */                                                        
 
     // register_wifi();
 
@@ -347,11 +421,6 @@ void app_main(void)
     anjay_init(); //Inicialización de protocolo LwM2M
     xTaskCreate(&anjay_task, "anjay_task", 16384, NULL, 5, NULL);   //Creación de tarea para protocolo LwM2M
     
-    //inicialización del sensor
-	ds18b20_init(GPIO_SENSOR_1);
-    ds18b20_init(GPI0_SENSOR_2);
-    ds18b20_init(GPI0_SENSOR_3);
-    xTaskCreate(temperature_task, "temperatue_task", 2048, NULL, 2, NULL);
 
     //esp_sleep_enable_timer_wakeup(TIMER_WAKEUP_TIME_US);
     //xTaskCreate(trigger_event_task, "Trigger Event Task", 2048, NULL, 5, NULL);
